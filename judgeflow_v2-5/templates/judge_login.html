@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Bíró belépés – {{ event.name }}{% endblock %}
+{% block content %}
+<div class="jf-login-wrap">
+  <div class="jf-login-card jf-fade">
+    <div class="jf-card">
+      <div class="text-center mb-4">
+        <div style="font-size:40px;margin-bottom:12px">⚖️</div>
+        <h2 class="jf-section-title">{% if session.get('lang','hu')=='hu' %}Bíró belépés{% else %}Judge Login{% endif %}</h2>
+        <p style="color:var(--text2);font-size:14px">{{ comp.name }} · {{ event.name }}</p>
+      </div>
+      <form method="POST">
+        <div class="jf-form-group">
+          <label class="jf-label">{% if session.get('lang','hu')=='hu' %}Ki vagy?{% else %}Who are you?{% endif %}</label>
+          <select name="judge_id" class="jf-input jf-select" required autofocus>
+            <option value="">– {% if session.get('lang','hu')=='hu' %}válassz{% else %}select{% endif %} –</option>
+            {% for j in judges %}
+            <option value="{{ j.id }}">{{ j.name }}{% if j.position %} · {{ j.position }}{% endif %}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="jf-form-group">
+          <label class="jf-label">{% if session.get('lang','hu')=='hu' %}Bírói kód{% else %}Judge Code{% endif %}</label>
+          <input type="password" name="judge_code" class="jf-input" required placeholder="••••"
+                 style="letter-spacing:4px;text-align:center;font-size:20px">
+          <div style="font-size:12px;color:var(--text2);margin-top:5px">
+            <i class="bi bi-info-circle"></i>
+            {% if session.get('lang','hu')=='hu' %}A rendező által beállított 4 jegyű kód{% else %}4-digit code set by organizer{% endif %}
+          </div>
+        </div>
+        <button type="submit" class="jf-btn w-100">
+          <i class="bi bi-box-arrow-in-right"></i>
+          {% if session.get('lang','hu')=='hu' %}Belépés{% else %}Login{% endif %}
+        </button>
+      </form>
+      <div class="text-center mt-3">
+        <a href="{{ url_for('judge_home') }}" style="font-size:13px;color:var(--text2);text-decoration:none">← {% if session.get('lang','hu')=='hu' %}Vissza{% else %}Back{% endif %}</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Versenyző belépés – {{ event.name }}{% endblock %}
+{% block content %}
+<div class="jf-login-wrap">
+  <div class="jf-login-card jf-fade" style="max-width:480px">
+    <div class="jf-card">
+      <div class="text-center mb-4">
+        <div style="font-size:40px;margin-bottom:12px">🐎</div>
+        <h2 class="jf-section-title">{{ event.name }}</h2>
+        <p style="color:var(--text2);font-size:14px">{{ comp.name }}</p>
+      </div>
+      <form method="POST">
+        <div class="jf-form-group">
+          <label class="jf-label">{% if session.get('lang','hu')=='hu' %}A te neved{% else %}Your name{% endif %}</label>
+          <select name="rider_id" id="riderSelect" class="jf-input jf-select" required autofocus onchange="checkDuplicate(this)">
+            <option value="">– {% if session.get('lang','hu')=='hu' %}válassz{% else %}select{% endif %} –</option>
+            {% for r in riders %}
+            <option value="{{ r.id }}" data-start="{{ r.start_number }}">
+              {{ r.name }} {% if r.horse %}({{ r.horse }}){% endif %}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Start number confirm (shown if duplicate names) -->
+        <div class="jf-form-group" id="startNumberGroup" style="display:{% if show_start %}block{% else %}none{% endif %}">
+          <label class="jf-label">{% if session.get('lang','hu')=='hu' %}Rajtszámod{% else %}Your start number{% endif %}</label>
+          <input type="number" name="start_number" class="jf-input" placeholder="#"
+                 style="text-align:center;font-size:24px;font-family:'Syne',sans-serif;font-weight:700">
+        </div>
+
+        <div class="jf-form-group">
+          <label class="jf-label">{% if session.get('lang','hu')=='hu' %}Kódod (6 jegy){% else %}Your code (6 digits){% endif %}</label>
+          <input type="password" name="rider_code" class="jf-input" required placeholder="••••••"
+                 style="letter-spacing:4px;text-align:center;font-size:20px" maxlength="6">
+          <div style="font-size:12px;color:var(--text2);margin-top:5px">
+            <i class="bi bi-info-circle"></i>
+            {% if session.get('lang','hu')=='hu' %}
+              Alapból: születési év + nap (pl. 2005.02.08 → 200508)
+            {% else %}
+              Default: birth year + day (e.g. 2005-02-08 → 200508)
+            {% endif %}
+          </div>
+        </div>
+
+        <button type="submit" class="jf-btn w-100">
+          <i class="bi bi-box-arrow-in-right"></i>
+          {% if session.get('lang','hu')=='hu' %}Belépés{% else %}Login{% endif %}
+        </button>
+      </form>
+      <div class="text-center mt-3 d-flex justify-content-between">
+        <a href="{{ url_for('rider_home') }}" style="font-size:13px;color:var(--text2);text-decoration:none">← {% if session.get('lang','hu')=='hu' %}Vissza{% else %}Back{% endif %}</a>
+        <a href="{{ url_for('rider_forgot', event_id=event.id) }}" style="font-size:13px;color:var(--accent);text-decoration:none">
+          🔑 {% if session.get('lang','hu')=='hu' %}Elfelejtett kód{% else %}Forgot code{% endif %}
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+// Build duplicate name map
+const riders = [{% for r in riders %}{"id":"{{ r.id }}","name":"{{ r.name }}"},{% endfor %}];
+function checkDuplicate(sel) {
+  const chosen = sel.options[sel.selectedIndex];
+  if (!chosen.value) return;
+  const chosenName = chosen.text.split('(')[0].trim();
+  const dups = riders.filter(r => r.name === chosenName);
+  document.getElementById('startNumberGroup').style.display = dups.length > 1 ? 'block' : 'none';
+}
+</script>
+{% endblock %}

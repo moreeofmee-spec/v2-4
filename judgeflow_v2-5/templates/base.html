@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="{{ session.get('lang','hu') }}" data-theme="light">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}JudgeFlow{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/judgeflow.css') }}">
+</head>
+<body>
+
+<nav class="jf-navbar">
+  <div class="container-fluid px-4 d-flex align-items-center justify-content-between">
+    <!-- Logo: goes to relevant home based on session -->
+    <a href="{{ url_for('index') }}" class="jf-logo">
+      <span class="jf-logo-mark">JF</span>
+      <span class="jf-logo-text">JudgeFlow</span>
+    </a>
+
+    <!-- Live breadcrumb -->
+    <div class="jf-nav-breadcrumb d-none d-md-flex align-items-center gap-1" style="font-size:13px;color:var(--text2)">
+      {% block nav_breadcrumb %}{% endblock %}
+    </div>
+
+    <div class="jf-nav-actions d-flex align-items-center gap-2">
+      <!-- Logout button (shown when logged in) -->
+      {% block nav_logout %}{% endblock %}
+
+      <!-- Lang switcher -->
+      <div class="jf-lang-switch">
+        <a href="{{ url_for('set_lang', lang='hu') }}" class="jf-lang-btn {% if session.get('lang','hu')=='hu' %}active{% endif %}">HU</a>
+        <span class="jf-lang-div">|</span>
+        <a href="{{ url_for('set_lang', lang='en') }}" class="jf-lang-btn {% if session.get('lang','hu')=='en' %}active{% endif %}">EN</a>
+      </div>
+      <!-- Theme toggle -->
+      <button class="jf-theme-btn" id="themeToggle">
+        <i class="bi bi-moon-fill" id="themeIcon"></i>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<main class="jf-main">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="container mt-3">
+        {% for cat, msg in messages %}
+          <div class="jf-alert jf-alert-{{ cat }}">
+            <i class="bi {% if cat=='success' %}bi-check-circle{% else %}bi-exclamation-triangle{% endif %} me-2"></i>{{ msg }}
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+  {% block content %}{% endblock %}
+</main>
+
+<footer class="jf-footer">
+  <div class="container text-center">
+    <span class="jf-footer-logo">JudgeFlow</span>
+    <span class="jf-footer-sep">·</span>
+    <span>Lovasverseny pontozó rendszer</span>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{{ url_for('static', filename='js/judgeflow.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

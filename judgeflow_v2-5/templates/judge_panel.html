@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Pontozás – {{ event.name }}{% endblock %}
+{% block nav_breadcrumb %}
+  <span style="color:var(--text2)">{{ comp.name }}</span>
+  <i class="bi bi-chevron-right" style="font-size:10px"></i>
+  <span style="color:var(--accent)">{{ event.name }}</span>
+  <i class="bi bi-chevron-right" style="font-size:10px"></i>
+  <span>{{ judge.name }}</span>
+{% endblock %}
+{% block nav_logout %}
+  <a href="{{ url_for('logout_judge', event_id=event.id) }}" class="jf-btn jf-btn-ghost jf-btn-sm">
+    <i class="bi bi-box-arrow-right"></i> Kilépés
+  </a>
+{% endblock %}
+{% block content %}
+<div class="jf-page-header">
+  <div class="container">
+    <div class="jf-breadcrumb"><a href="{{ url_for('index') }}">JudgeFlow</a> / {{ comp.name }} / {{ event.name }}</div>
+    <h1>{{ judge.name }}{% if judge.position %} <span style="color:var(--accent)">({{ judge.position }})</span>{% endif %}</h1>
+    <p style="color:var(--text2);font-size:14px;margin-top:4px">{{ event.name }}</p>
+    <div class="d-flex gap-2 mt-2">
+      <span class="jf-stat-pill"><strong style="color:var(--accent)">{{ scores|length }}</strong> / {{ riders|length }} {% if session.get('lang','hu')=='hu' %}pontozva{% else %}scored{% endif %}</span>
+    </div>
+  </div>
+</div>
+<div class="container" style="max-width:700px">
+  {% if riders %}
+    <div class="d-flex flex-column gap-3">
+      {% for rider in riders %}
+        {% set scored = rider.id in scores %}
+        <a href="{{ url_for('score_rider', event_id=event.id, rider_id=rider.id) }}"
+           class="jf-rider-card {% if scored %}scored{% else %}unscored{% endif %} jf-fade" style="animation-delay:{{ loop.index0 * 0.04 }}s">
+          <div class="d-flex align-items-center gap-3 flex-1">
+            <div class="jf-start-badge">{{ rider.start_number }}</div>
+            <div>
+              <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px">{{ rider.name }}</div>
+              <div style="color:var(--text2);font-size:13px;margin-top:2px">
+                🐎 {{ rider.horse }}
+                {% if rider.category %}<span class="jf-badge jf-badge-grey" style="font-size:11px">{{ rider.category }}</span>{% endif %}
+                {% if rider.licence %}<span class="jf-badge" style="font-size:11px">{{ rider.licence }}</span>{% endif %}
+              </div>
+            </div>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            {% if scored %}
+              <span class="jf-badge"><i class="bi bi-check2"></i> {% if session.get('lang','hu')=='hu' %}Kész{% else %}Done{% endif %}</span>
+            {% else %}
+              <span class="jf-badge jf-badge-grey">{% if session.get('lang','hu')=='hu' %}Hiányzik{% else %}Pending{% endif %}</span>
+            {% endif %}
+            <i class="bi bi-chevron-right" style="color:var(--text2)"></i>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="jf-card text-center" style="padding:48px">
+      <p style="color:var(--text2)">{% if session.get('lang','hu')=='hu' %}A rendező még nem adott hozzá indulókat.{% else %}No riders added yet.{% endif %}</p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

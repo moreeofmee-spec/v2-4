@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Bíró belépés – {{ comp.name }}{% endblock %}
+{% block content %}
+<div class="jf-login-wrap">
+  <div class="jf-login-card jf-fade">
+    <div class="jf-card">
+      <div class="text-center mb-4">
+        <div style="font-size:40px;margin-bottom:12px">⚖️</div>
+        <h2 class="jf-section-title">Bíró belépés</h2>
+        <p style="color:var(--text2);font-size:14px">{{ comp.name }}</p>
+      </div>
+      <form method="POST">
+        <div class="jf-form-group">
+          <label class="jf-label">Ki vagy?</label>
+          <select name="judge_id" class="jf-input jf-select" required autofocus id="judgeSelect">
+            <option value="">– válassz –</option>
+            {% for j in judges %}
+            <option value="{{ j.id }}">{{ j.name }}{% if j.position %} · {{ j.position }}{% endif %}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="jf-form-group">
+          <label class="jf-label">Bírói kód (4 jegy)</label>
+          <input type="password" name="judge_code" id="judgeCode" class="jf-input" required
+                 placeholder="••••" maxlength="4"
+                 style="letter-spacing:6px;text-align:center;font-size:24px">
+          <div style="font-size:12px;color:var(--text2);margin-top:5px">
+            <i class="bi bi-info-circle"></i> A rendező által beállított 4 jegyű kód
+          </div>
+        </div>
+        <button type="submit" class="jf-btn w-100">
+          <i class="bi bi-box-arrow-in-right"></i> Belépés
+        </button>
+      </form>
+      <div class="text-center mt-3">
+        <a href="{{ url_for('judge_home') }}" style="font-size:13px;color:var(--text2);text-decoration:none">← Vissza</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+// Enter on code field submits
+document.getElementById('judgeCode').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') { e.preventDefault(); this.closest('form').submit(); }
+});
+</script>
+{% endblock %}
