@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Elfelejtett kód – JudgeFlow{% endblock %}
+{% block content %}
+<div class="jf-login-wrap">
+  <div class="jf-login-card jf-fade">
+    <div class="jf-card">
+      <div class="text-center mb-4">
+        <div style="font-size:40px;margin-bottom:12px">🔑</div>
+        <h2 class="jf-section-title">{% if session.get('lang','hu')=='hu' %}Elfelejtett kód{% else %}Forgot Code{% endif %}</h2>
+        <p style="color:var(--text2);font-size:14px">
+          {% if session.get('lang','hu')=='hu' %}
+            Add meg a regisztrált email címed vagy telefonszámodat.
+          {% else %}
+            Enter your registered email or phone number.
+          {% endif %}
+        </p>
+      </div>
+      <form method="POST">
+        <input type="hidden" name="event_id" value="{{ event_id }}">
+        <div class="jf-form-group">
+          <label class="jf-label">{% if session.get('lang','hu')=='hu' %}Email vagy telefonszám{% else %}Email or phone number{% endif %}</label>
+          <input type="text" name="contact" class="jf-input" required autofocus
+                 placeholder="{% if session.get('lang','hu')=='hu' %}email@cim.hu vagy +36...{% else %}email@address.com or +36...{% endif %}">
+        </div>
+        <button type="submit" class="jf-btn w-100">
+          <i class="bi bi-send"></i>
+          {% if session.get('lang','hu')=='hu' %}Kód küldése{% else %}Send code{% endif %}
+        </button>
+      </form>
+      <div class="jf-card mt-3" style="background:var(--bg2);border-color:var(--border)">
+        <div style="font-size:13px;color:var(--text2)">
+          <i class="bi bi-info-circle me-2"></i>
+          {% if session.get('lang','hu')=='hu' %}
+            Ha nem tudod milyen elérhetőséggel regisztráltak, <strong>kérdezd meg a versenyrendezőt</strong> – ő tudja a kapcsolati adataidat.
+          {% else %}
+            If you don't know what contact was registered, <strong>ask the organizer</strong> – they have your details.
+          {% endif %}
+        </div>
+      </div>
+      <div class="text-center mt-3">
+        <a href="javascript:history.back()" style="font-size:13px;color:var(--text2);text-decoration:none">← {% if session.get('lang','hu')=='hu' %}Vissza{% else %}Back{% endif %}</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

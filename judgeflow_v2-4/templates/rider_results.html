@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% block title %}Eredmények – {{ event.name }}{% endblock %}
+{% block nav_breadcrumb %}
+  <span style="color:var(--text2)">{{ comp.name }}</span>
+  <i class="bi bi-chevron-right" style="font-size:10px"></i>
+  <span style="color:var(--accent)">{{ event.name }}</span>
+{% endblock %}
+{% block nav_logout %}
+  <a href="{{ url_for('logout_rider', event_id=event.id) }}" class="jf-btn jf-btn-ghost jf-btn-sm">
+    <i class="bi bi-box-arrow-right"></i> Kilépés
+  </a>
+{% endblock %}
+{% block content %}
+<div class="jf-page-header">
+  <div class="container">
+    <div class="jf-breadcrumb">
+      <a href="{{ url_for('rider_home') }}">🐎</a> /
+      <a href="{{ url_for('rider_enter') if false else '#' }}" onclick="history.back();return false;">{{ comp.name }}</a> /
+      {{ event.name }}
+    </div>
+    <h1>🏆 {{ event.name }}</h1>
+  </div>
+</div>
+
+<div class="container" style="max-width:1000px">
+  <!-- Filters -->
+  <div class="jf-filter-bar jf-fade mb-4">
+    <div class="jf-filter-group">
+      <span class="jf-filter-label">Kategória</span>
+      <select class="jf-input jf-select" onchange="applyFilters(this,'category')">
+        <option value="">Összes</option>
+        {% for cat in categories %}<option value="{{ cat.name }}" {% if filter_cat==cat.name %}selected{% endif %}>{{ cat.name }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="jf-filter-group">
+      <span class="jf-filter-label">Licence</span>
+      <select class="jf-input jf-select" onchange="applyFilters(this,'licence')">
+        <option value="">Összes</option>
+        {% for lic in licences %}<option value="{{ lic.name }}" {% if filter_lic==lic.name %}selected{% endif %}>{{ lic.name }}</option>{% endfor %}
+      </select>
+    </div>
+  </div>
+
+  <!-- My result highlighted -->
+  {% if my_rider_id %}
+    {% for r in results if r.rider.id == my_rider_id %}
+    <div class="jf-card mb-4 jf-fade" style="background:var(--accent-light);border-color:var(--accent)">
+      <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:13px;color:var(--accent);margin-bottom:8px">
+        🏅 {% if session.get('lang','hu')=='hu' %}A te eredményed{% else %}Your result{% endif %}
+      </div>
+      <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+        <div>
+          <div style="font-size:1.2rem;font-weight:700">{{ r.rank }}. hely – {{ r.rider.name }}</div>
+          <div style="color:var(--text2);font-size:13px">🐎 {{ r.rider.horse }}</div>
+        </div>
+        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:2rem;color:var(--accent)">
+          {{ r.avg_percent }}%
+        </div>
+      </div>
+      <!-- Judge breakdown -->
+      <div class="mt-3">
+        {% for js in r.judge_scores %}
+        <div class="d-flex justify-content-between" style="font-size:13px;padding:4px 0;border-bottom:1px solid var(--border)">
+          <span>{{ js.judge }}{% if js.position %} ({{ js.position }}){% endif %}</span>
+          <strong style="color:var(--accent)">{{ js.percent }}%</strong>
+        </div>
+        {% endfor %}
+      </div>
+      <!-- Change code -->
+      <details class="mt-3" style="font-size:13px">
+        <summary style="cursor:pointer;color:var(--text2)">🔑 {% if session.get('lang','hu')=='hu' %}Kód megváltoztatása{% else %}Change code{% endif %}</summary>
+        <form method="POST" action="{{ url_for('rider_change_code') }}" class="d-flex gap-2 mt-2">
+          <input type="hidden" name="rider_id" value="{{ r.rider.id }}">
+          <input type="hidden" name="event_id" value="{{ event.id }}">
+          <input type="number" name="new_code" class="jf-input" placeholder="Új 6 jegyű kód" maxlength="6" style="flex:1">
+          <button type="submit" class="jf-btn jf-btn-sm">Mentés</button>
+        </form>
+      </details>
+    </div>
+    {% endfor %}
+  {% endif %}
+
+  <!-- Full results table -->
+  {% if results %}
+  <div class="jf-card jf-fade">
+    <table class="jf-table">
+      <thead><tr>
+        <th>Hely</th><th>#</th><th>Versenyző</th><th>Ló</th><th>Kat.</th><th>Lic.</th><th>Átlag %</th>
+      </tr></thead>
+      <tbody>
+      {% for r in results %}
+      <tr id="row-{{ r.rider.id }}"
+          style="{% if r.rider.id == my_rider_id %}background:var(--accent-light);{% endif %} cursor:pointer"
+          onclick="toggleDetail({{ r.rider.id }})">
+        <td><span class="jf-rank {% if r.rank==1 %}jf-rank-1{% elif r.rank==2 %}jf-rank-2{% elif r.rank==3 %}jf-rank-3{% endif %}">
+          {% if r.rank==1 %}🥇{% elif r.rank==2 %}🥈{% elif r.rank==3 %}🥉{% else %}{{ r.rank }}{% endif %}
+        </span></td>
+        <td><span class="jf-badge">{{ r.rider.start_number }}</span></td>
+        <td><strong>{{ r.rider.name }}</strong>
+          {% if r.rider.id == my_rider_id %}<span class="jf-badge ms-1" style="font-size:10px">Te</span>{% endif %}
+        </td>
+        <td>{{ r.rider.horse }}</td>
+        <td><span class="jf-badge jf-badge-grey" style="font-size:11px">{{ r.rider.category }}</span></td>
+        <td><span class="jf-badge" style="font-size:11px">{{ r.rider.licence }}</span></td>
+        <td>
+          <div class="jf-score-bar">
+            <div class="jf-bar-track"><div class="jf-bar-fill" style="width:{{ r.avg_percent }}%"></div></div>
+            <span class="jf-score-pct" style="color:var(--accent)">{{ r.avg_percent }}%</span>
+          </div>
+        </td>
+      </tr>
+      <!-- Detail row (hidden) -->
+      <tr id="detail-{{ r.rider.id }}" style="display:none">
+        <td colspan="7" style="background:var(--bg2);padding:12px 16px">
+          <div style="font-size:13px;font-weight:600;margin-bottom:6px">Bírói részeredmények:</div>
+          {% for js in r.judge_scores %}
+          <div class="d-flex justify-content-between" style="font-size:13px;padding:3px 0;border-bottom:1px solid var(--border)">
+            <span>{{ js.judge }}{% if js.position %} ({{ js.position }}){% endif %}</span>
+            <strong style="color:var(--accent)">{{ js.percent }}%</strong>
+          </div>
+          {% endfor %}
+          {% if not r.judge_scores %}
+          <span style="color:var(--text2)">Még nincs pontozás</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="jf-card text-center" style="padding:48px">
+    <p style="color:var(--text2)">Még nincsenek eredmények.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+function toggleDetail(riderId) {
+  const row = document.getElementById('detail-' + riderId);
+  row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
+}
+function applyFilters(sel, param) {
+  const params = new URLSearchParams(window.location.search);
+  if (sel.value) params.set(param, sel.value);
+  else params.delete(param);
+  window.location = window.location.pathname + '?' + params.toString();
+}
+</script>
+{% endblock %}

@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Versenyszámok – {{ comp.name }}{% endblock %}
+{% block nav_breadcrumb %}
+  <span style="color:var(--text2)">{{ comp.name }}</span>
+  <i class="bi bi-chevron-right" style="font-size:10px"></i>
+  <span style="color:var(--accent)">{{ judge.name }}</span>
+{% endblock %}
+{% block nav_logout %}
+  <a href="{{ url_for('logout_judge', comp_id=comp.id) }}" class="jf-btn jf-btn-ghost jf-btn-sm">
+    <i class="bi bi-box-arrow-right"></i> Kilépés
+  </a>
+{% endblock %}
+{% block content %}
+<div class="jf-page-header">
+  <div class="container">
+    <div class="jf-breadcrumb"><a href="{{ url_for('judge_home') }}">⚖️ Bíró</a> / {{ comp.name }}</div>
+    <h1>{{ judge.name }}{% if judge.position %} <span style="color:var(--accent)">({{ judge.position }})</span>{% endif %}</h1>
+    <p style="color:var(--text2);font-size:14px;margin-top:4px">{{ comp.name }}{% if comp.date %} · {{ comp.date }}{% endif %}</p>
+  </div>
+</div>
+<div class="container" style="max-width:600px">
+  <h2 class="jf-section-title mb-3">Versenyszámok</h2>
+  {% if events %}
+    <div class="d-flex flex-column gap-3">
+      {% for event in events %}
+      {% set scored = namespace(count=0) %}
+      {% set total = event.riders|length %}
+      <a href="{{ url_for('judge_panel', event_id=event.id) }}" class="jf-rider-card jf-fade" style="animation-delay:{{ loop.index0 * 0.06 }}s">
+        <div>
+          <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:16px">{{ event.name }}</div>
+          <div style="color:var(--text2);font-size:13px;margin-top:2px">
+            🐎 {{ total }} induló
+          </div>
+        </div>
+        <i class="bi bi-chevron-right" style="color:var(--text2)"></i>
+      </a>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="jf-card text-center" style="padding:40px">
+      <p style="color:var(--text2)">Még nincs versenyszám.</p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

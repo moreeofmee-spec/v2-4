@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+{% block title %}{{ comp.name }} – JudgeFlow{% endblock %}
+{% block nav_breadcrumb %}
+  <a href="{{ url_for('organizer_home') }}" style="color:var(--text2);text-decoration:none">Rendező</a>
+  <i class="bi bi-chevron-right" style="font-size:10px"></i>
+  <span style="color:var(--accent)">{{ comp.name }}</span>
+{% endblock %}
+{% block nav_logout %}
+  <a href="{{ url_for('logout_organizer', comp_id=comp.id) }}" class="jf-btn jf-btn-ghost jf-btn-sm">
+    <i class="bi bi-box-arrow-right"></i> Kilépés
+  </a>
+{% endblock %}
+{% block content %}
+<div class="jf-page-header">
+  <div class="container">
+    <div class="jf-breadcrumb"><a href="{{ url_for('index') }}">JudgeFlow</a> / <a href="{{ url_for('organizer_home') }}">Rendező</a></div>
+    <h1>{{ comp.name }}</h1>
+    <div class="d-flex gap-2 mt-2 flex-wrap align-items-center">
+      <span class="jf-stat-pill" style="background:var(--accent);color:#fff;font-size:15px;padding:6px 16px">
+        🔑 Verseny ID: <strong>{{ comp.public_id }}</strong>
+      </span>
+      <span class="jf-stat-pill">🗂️ Rendező kód: <strong>{{ comp.organizer_code }}</strong></span>
+      {% if comp.date %}<span class="jf-stat-pill"><i class="bi bi-calendar"></i> {{ comp.date }}</span>{% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="container" style="max-width:1100px">
+  <div class="row g-4">
+
+    <!-- LEFT: Judges (competition level) -->
+    <div class="col-lg-4">
+      <div class="jf-card jf-fade">
+        <h3 class="jf-section-title"><i class="bi bi-person-badge me-2" style="color:var(--accent)"></i>Bírók</h3>
+        <p style="font-size:12px;color:var(--text2);margin-bottom:12px">
+          <i class="bi bi-info-circle"></i> A bírók az egész versenyhez tartoznak, minden versenyszámban elérhetők.
+        </p>
+
+        <!-- Judge list -->
+        <div id="judgeList">
+        {% for j in judges %}
+        <div class="jf-inline-row" id="judge-display-{{ j.id }}">
+          <div class="jf-inline-info">
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+              <strong>{{ j.name }}</strong>
+              {% if j.judge_code %}<span class="jf-badge jf-badge-grey">🔑 {{ j.judge_code }}</span>{% endif %}
+            </div>
+            {% if j.qualification %}<div style="font-size:11px;color:var(--text2);margin-top:2px">{{ j.qualification }}</div>{% endif %}
+          </div>
+          <div class="d-flex gap-1 flex-shrink-0">
+            <button class="jf-btn jf-btn-ghost jf-btn-sm" onclick="showJudgeEdit({{ j.id }})"><i class="bi bi-pencil"></i></button>
+            <button class="jf-btn jf-btn-danger jf-btn-sm" onclick="deleteJudge({{ j.id }}, {{ comp.id }})"><i class="bi bi-trash"></i></button>
+          </div>
+        </div>
+        <div class="jf-edit-row" id="judge-edit-{{ j.id }}" style="display:none">
+          <div class="row g-2 mb-2">
+            <div class="col-12"><input type="text" class="jf-input" id="je-name-{{ j.id }}" value="{{ j.name }}" placeholder="Bíró neve"></div>
+            <div class="col-12"><input type="text" class="jf-input" id="je-qual-{{ j.id }}" value="{{ j.qualification or '' }}" placeholder="Minősítés"></div>
+            <div class="col-12"><input type="text" class="jf-input" id="je-code-{{ j.id }}" value="{{ j.judge_code or '' }}" placeholder="Belépő kód (4 szám)" maxlength="4" style="letter-spacing:3px;text-align:center"></div>
+          </div>
+          <div class="d-flex gap-2">
+            <button class="jf-btn jf-btn-sm" onclick="saveJudge({{ j.id }}, {{ comp.id }})"><i class="bi bi-floppy"></i> Mentés</button>
+            <button class="jf-btn jf-btn-ghost jf-btn-sm" onclick="cancelJudgeEdit({{ j.id }})">Mégsem</button>
+          </div>
+        </div>
+        {% endfor %}
+        </div>
+
+        {% if not judges %}<p style="color:var(--text2);font-size:13px;margin-bottom:12px">Még nincs bíró.</p>{% endif %}
+
+        <!-- Add judge -->
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-top:12px">
+          <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">+ Új bíró</div>
+          <input type="text" id="judgeNameInput" class="jf-input mb-2" placeholder="Bíró neve *">
+          <input type="text" id="judgeQualInput" class="jf-input mb-2" placeholder="Minősítés">
+          <input type="text" id="judgeCodeInput" class="jf-input mb-2" maxlength="4"
+                 placeholder="Belépő kód (4 szám)" style="letter-spacing:3px;text-align:center">
+          <div style="font-size:11px;color:var(--text2);margin-bottom:8px">Ezzel lép be a bíró a pontozáshoz</div>
+          <button class="jf-btn jf-btn-sm w-100" onclick="addJudge({{ comp.id }})">
+            <i class="bi bi-plus-circle"></i> Bíró hozzáadása
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Events + versenyszámok -->
+    <div class="col-lg-8">
+      <!-- Info box -->
+      <div class="jf-card mb-4 jf-fade" style="background:var(--accent-light);border-color:var(--accent)">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">📋 Verseny azonosító (indulóknak)</div>
+            <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:2rem">{{ comp.public_id }}</div>
+          </div>
+          <div class="col-md-6">
+            <div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">🗂️ Rendező kód (csak neked)</div>
+            <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:2rem">{{ comp.organizer_code }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Events -->
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="jf-section-title mb-0">Versenyszámok</h3>
+        <div class="d-flex gap-2">
+          <input type="text" id="newEventName" class="jf-input" style="width:180px" placeholder="Versenyszám neve"
+                 onkeydown="if(event.key==='Enter'){event.preventDefault();addEvent({{ comp.id }})}">
+          <button class="jf-btn jf-btn-sm" onclick="addEvent({{ comp.id }})"><i class="bi bi-plus-circle"></i> Hozzáad</button>
+        </div>
+      </div>
+
+      {% if events %}
+        <div class="d-flex flex-column gap-3">
+          {% for event in events %}
+          <div class="jf-card jf-card-sm jf-fade" style="animation-delay:{{ loop.index0 * 0.05 }}s">
+            <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap">
+              <div>
+                <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:16px">{{ event.name }}</div>
+                <div style="color:var(--text2);font-size:13px;margin-top:3px">
+                  <span class="jf-stat-pill" style="font-size:11px;padding:2px 10px">🐎 {{ event.riders|length }}</span>
+                </div>
+              </div>
+              <div class="d-flex gap-2 flex-wrap">
+                <a href="{{ url_for('manage_event', event_id=event.id) }}" class="jf-btn jf-btn-sm">
+                  <i class="bi bi-pencil-square"></i> Indulók
+                </a>
+                <a href="{{ url_for('results', event_id=event.id) }}" class="jf-btn jf-btn-outline jf-btn-sm">
+                  <i class="bi bi-trophy"></i> Eredmények
+                </a>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="jf-card text-center" style="padding:40px">
+          <p style="color:var(--text2)">Még nincs versenyszám. Adj hozzá egyet!</p>
+        </div>
+      {% endif %}
+
+      <div class="text-center mt-4">
+        <a href="{{ url_for('index') }}" class="jf-btn jf-btn-outline">
+          <i class="bi bi-check-circle"></i> Kész, kilépés
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+// ── Judge CRUD ────────────────────────────────────────────────────────────────
+function showJudgeEdit(id) {
+  document.getElementById('judge-display-' + id).style.display = 'none';
+  document.getElementById('judge-edit-' + id).style.display = 'block';
+}
+function cancelJudgeEdit(id) {
+  document.getElementById('judge-display-' + id).style.display = '';
+  document.getElementById('judge-edit-' + id).style.display = 'none';
+}
+async function saveJudge(id, compId) {
+  const name = document.getElementById('je-name-' + id).value.trim();
+  if (!name) return alert('Név kötelező!');
+  const res = await fetch(`/competition/${compId}/edit-judge/${id}`, {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      name,
+      qualification: document.getElementById('je-qual-' + id).value.trim(),
+      judge_code: document.getElementById('je-code-' + id).value.trim()
+    })
+  });
+  if (res.ok) location.reload();
+}
+async function deleteJudge(id, compId) {
+  if (!confirm('Biztosan törlöd ezt a bírót?')) return;
+  const res = await fetch(`/competition/${compId}/delete-judge/${id}`, {method: 'POST'});
+  if (res.ok) location.reload();
+}
+async function addJudge(compId) {
+  const name = document.getElementById('judgeNameInput').value.trim();
+  if (!name) return alert('Bíró neve kötelező!');
+  const res = await fetch(`/competition/${compId}/add-judge`, {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      name,
+      qualification: document.getElementById('judgeQualInput').value.trim(),
+      judge_code: document.getElementById('judgeCodeInput').value.trim()
+    })
+  });
+  if (res.ok) location.reload();
+}
+// Enter on judge name input
+document.getElementById('judgeNameInput')?.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') { e.preventDefault(); addJudge({{ comp.id }}); }
+});
+
+// ── Events ────────────────────────────────────────────────────────────────────
+async function addEvent(compId) {
+  const name = document.getElementById('newEventName').value.trim();
+  if (!name) return;
+  const res = await fetch(`/competition/${compId}/add-event`, {
+    method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({name})
+  });
+  if (res.ok) location.reload();
+}
+</script>
+{% endblock %}

@@ -1,0 +1,269 @@
+{% extends "base.html" %}
+{% block title %}{{ event.name }} – JudgeFlow{% endblock %}
+{% block nav_breadcrumb %}
+  <a href="{{ url_for('manage_competition', comp_id=comp.id) }}" style="color:var(--text2);text-decoration:none">{{ comp.name }}</a>
+  <i class="bi bi-chevron-right" style="font-size:10px"></i>
+  <span style="color:var(--accent)">{{ event.name }}</span>
+{% endblock %}
+{% block nav_logout %}
+  <a href="{{ url_for('logout_organizer', comp_id=comp.id) }}" class="jf-btn jf-btn-ghost jf-btn-sm">
+    <i class="bi bi-box-arrow-right"></i> Kilépés
+  </a>
+{% endblock %}
+{% block content %}
+<div class="jf-page-header">
+  <div class="container">
+    <div class="jf-breadcrumb"><a href="{{ url_for('manage_competition', comp_id=comp.id) }}">← {{ comp.name }}</a></div>
+    <h1>{{ event.name }}</h1>
+    <div class="d-flex gap-2 mt-2 flex-wrap">
+      <span class="jf-stat-pill">🐎 <strong>{{ riders|length }}</strong> induló</span>
+      <span class="jf-stat-pill">⚖️ <strong>{{ event_judges|length }}</strong> bíró</span>
+      <a href="{{ url_for('results', event_id=event.id) }}" class="jf-btn jf-btn-outline jf-btn-sm">
+        <i class="bi bi-trophy"></i> Eredmények
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="container" style="max-width:1100px">
+  <!-- Tabs -->
+  <div class="d-flex gap-2 mb-4">
+    <button class="jf-btn" id="tabRiders" onclick="showTab('riders')">🐎 Indulók / Bírók</button>
+    <button class="jf-btn jf-btn-ghost" id="tabCats" onclick="showTab('cats')">🏷️ Kategóriák & Licencek</button>
+  </div>
+
+  <!-- Tab: Riders + Judges -->
+  <div id="panelRiders">
+    <div class="row g-4">
+      <!-- Judges for this event -->
+      <div class="col-lg-4">
+        <div class="jf-card jf-fade">
+          <h3 class="jf-section-title" style="font-size:1rem"><i class="bi bi-person-badge me-2" style="color:var(--accent)"></i>Bírók ennél a versenyszámnál</h3>
+          <p style="font-size:12px;color:var(--text2);margin-bottom:12px">Válaszd ki melyik bírók bíráskodnak, és milyen pozícióban.</p>
+
+          {% for ej in event_judges %}
+          {% set j = ej.judge_id | int %}
+          {% set judge = all_judges | selectattr('id', 'eq', ej.judge_id) | first %}
+          {% if judge %}
+          <div class="jf-inline-row">
+            <div class="jf-inline-info">
+              <strong>{{ judge.name }}</strong>
+              {% if ej.position %}<span class="jf-badge ms-1">{{ ej.position }}</span>{% endif %}
+            </div>
+            <button class="jf-btn jf-btn-danger jf-btn-sm" onclick="removeEventJudge({{ judge.id }}, {{ event.id }})">
+              <i class="bi bi-x"></i>
+            </button>
+          </div>
+          {% endif %}
+          {% endfor %}
+
+          {% if not event_judges %}
+          <p style="color:var(--text2);font-size:13px;margin-bottom:12px">Még nincs bíró hozzárendelve.</p>
+          {% endif %}
+
+          <!-- Add judge to event -->
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-top:12px">
+            <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">+ Bíró hozzáadása</div>
+            <select id="eventJudgeSelect" class="jf-input jf-select mb-2">
+              <option value="">– válassz bírót –</option>
+              {% for j in all_judges %}
+              {% if j.id not in event_judge_ids %}
+              <option value="{{ j.id }}">{{ j.name }}{% if j.qualification %} · {{ j.qualification }}{% endif %}</option>
+              {% endif %}
+              {% endfor %}
+            </select>
+            <select id="eventJudgePosSelect" class="jf-input jf-select mb-2">
+              <option value="">– pozíció –</option>
+              {% for pos in judge_positions %}<option value="{{ pos }}">{{ pos }}</option>{% endfor %}
+            </select>
+            <button class="jf-btn jf-btn-sm w-100" onclick="addEventJudge({{ event.id }})">
+              <i class="bi bi-plus-circle"></i> Hozzáadás
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Riders -->
+      <div class="col-lg-8">
+        <div class="jf-card jf-fade">
+          <h3 class="jf-section-title"><i class="bi bi-person-riding-horse me-2" style="color:var(--accent)"></i>Indulók</h3>
+
+          <div id="riderList">
+          {% for r in riders %}
+          <div class="jf-inline-row" id="rider-display-{{ r.id }}">
+            <div class="jf-inline-info" style="flex:1;min-width:0">
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                <span class="jf-badge" style="min-width:32px;text-align:center">{{ r.start_number }}</span>
+                <strong>{{ r.name }}</strong>
+                <span style="color:var(--text2);font-size:13px">🐎 {{ r.horse }}</span>
+              </div>
+              <div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:6px;align-items:center">
+                {% if r.category %}<span class="jf-badge jf-badge-grey" style="font-size:11px">{{ r.category }}</span>{% endif %}
+                {% if r.licence %}<span class="jf-badge" style="font-size:11px">{{ r.licence }}</span>{% endif %}
+                {% if r.email %}<span style="font-size:11px;color:var(--text2)"><i class="bi bi-envelope"></i> {{ r.email }}</span>{% endif %}
+                {% if r.phone %}<span style="font-size:11px;color:var(--text2)"><i class="bi bi-telephone"></i> {{ r.phone }}</span>{% endif %}
+                {% if r.rider_code %}<span style="font-size:11px;color:var(--text2)">🔑 {{ r.rider_code }}</span>{% endif %}
+              </div>
+            </div>
+            <div class="d-flex gap-1 flex-shrink-0">
+              <button class="jf-btn jf-btn-ghost jf-btn-sm" onclick="showRiderEdit({{ r.id }})"><i class="bi bi-pencil"></i></button>
+              <button class="jf-btn jf-btn-danger jf-btn-sm" onclick="deleteRider({{ r.id }}, {{ event.id }})"><i class="bi bi-trash"></i></button>
+            </div>
+          </div>
+          <div class="jf-edit-row" id="rider-edit-{{ r.id }}" style="display:none">
+            <div class="row g-2 mb-2">
+              <div class="col-md-6"><label class="jf-label">Versenyző neve *</label><input type="text" class="jf-input" id="re-name-{{ r.id }}" value="{{ r.name }}"></div>
+              <div class="col-md-6"><label class="jf-label">Ló neve</label><input type="text" class="jf-input" id="re-horse-{{ r.id }}" value="{{ r.horse or '' }}"></div>
+              <div class="col-md-6"><label class="jf-label">Kategória</label>
+                <select class="jf-input jf-select" id="re-cat-{{ r.id }}">{% for cat in categories %}<option value="{{ cat.name }}" {% if r.category == cat.name %}selected{% endif %}>{{ cat.name }}</option>{% endfor %}</select>
+              </div>
+              <div class="col-md-6"><label class="jf-label">Licence</label>
+                <select class="jf-input jf-select" id="re-lic-{{ r.id }}">{% for lic in licences %}<option value="{{ lic.name }}" {% if r.licence == lic.name %}selected{% endif %}>{{ lic.name }}</option>{% endfor %}</select>
+              </div>
+              <div class="col-md-4"><label class="jf-label">Email</label><input type="email" class="jf-input" id="re-email-{{ r.id }}" value="{{ r.email or '' }}"></div>
+              <div class="col-md-4"><label class="jf-label">Telefon</label><input type="tel" class="jf-input" id="re-phone-{{ r.id }}" value="{{ r.phone or '' }}"></div>
+              <div class="col-md-4"><label class="jf-label">Kód (6 jegy)</label><input type="text" class="jf-input" id="re-code-{{ r.id }}" value="{{ r.rider_code or '' }}" maxlength="6"></div>
+            </div>
+            <div class="d-flex gap-2">
+              <button class="jf-btn jf-btn-sm" onclick="saveRider({{ r.id }}, {{ event.id }})"><i class="bi bi-floppy"></i> Mentés</button>
+              <button class="jf-btn jf-btn-ghost jf-btn-sm" onclick="cancelRiderEdit({{ r.id }})">Mégsem</button>
+            </div>
+          </div>
+          {% endfor %}
+          </div>
+
+          {% if not riders %}<p style="color:var(--text2);font-size:13px;margin-bottom:16px">Még nincs induló.</p>{% endif %}
+
+          <!-- Add rider -->
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px;margin-top:16px">
+            <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px">➕ Új induló – rajtszám automatikus</div>
+            <div class="row g-2">
+              <div class="col-md-4"><label class="jf-label">Versenyző neve *</label><input type="text" id="riderNameInput" class="jf-input" onkeydown="if(event.key==='Enter'){event.preventDefault();addRider({{ event.id }})}"></div>
+              <div class="col-md-4"><label class="jf-label">Ló neve</label><input type="text" id="riderHorseInput" class="jf-input"></div>
+              <div class="col-md-2"><label class="jf-label">Kategória</label>
+                <select id="riderCategoryInput" class="jf-input jf-select">{% for cat in categories %}<option value="{{ cat.name }}">{{ cat.name }}</option>{% endfor %}</select>
+              </div>
+              <div class="col-md-2"><label class="jf-label">Licence</label>
+                <select id="riderLicenceInput" class="jf-input jf-select">{% for lic in licences %}<option value="{{ lic.name }}">{{ lic.name }}</option>{% endfor %}</select>
+              </div>
+              <div class="col-md-4"><label class="jf-label">Email</label><input type="email" id="riderEmailInput" class="jf-input"></div>
+              <div class="col-md-4"><label class="jf-label">Telefon</label><input type="tel" id="riderPhoneInput" class="jf-input"></div>
+              <div class="col-md-4"><label class="jf-label">Kód (pl. 200508)</label><input type="text" id="riderCodeInput" class="jf-input" maxlength="6" placeholder="200508"></div>
+              <div class="col-12 mt-1"><button class="jf-btn" onclick="addRider({{ event.id }})"><i class="bi bi-plus-circle"></i> Induló hozzáadása</button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab: Categories & Licences -->
+  <div id="panelCats" style="display:none">
+    <div class="row g-4">
+      <div class="col-md-6">
+        <div class="jf-card jf-fade">
+          <h3 class="jf-section-title" style="font-size:1rem"><i class="bi bi-tags me-2" style="color:var(--accent)"></i>Kategóriák</h3>
+          <div class="d-flex flex-wrap gap-2 mb-3">{% for cat in categories %}<span class="jf-badge">{{ cat.name }}</span>{% endfor %}</div>
+          <div class="d-flex gap-2">
+            <input type="text" id="newCategoryInput" class="jf-input" placeholder="Új kategória" style="flex:1" onkeydown="if(event.key==='Enter'){event.preventDefault();addCategory({{ event.id }})}">
+            <button class="jf-btn jf-btn-sm" onclick="addCategory({{ event.id }})"><i class="bi bi-plus"></i></button>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="jf-card jf-fade">
+          <h3 class="jf-section-title" style="font-size:1rem"><i class="bi bi-patch-check me-2" style="color:var(--accent)"></i>Licencek</h3>
+          <div class="d-flex flex-wrap gap-2 mb-3">{% for lic in licences %}<span class="jf-badge jf-badge-grey">{{ lic.name }}</span>{% endfor %}</div>
+          <div class="d-flex gap-2">
+            <input type="text" id="newLicenceInput" class="jf-input" placeholder="Új licence" style="flex:1" onkeydown="if(event.key==='Enter'){event.preventDefault();addLicence({{ event.id }})}">
+            <button class="jf-btn jf-btn-sm" onclick="addLicence({{ event.id }})"><i class="bi bi-plus"></i></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="text-center mt-4">
+    <a href="{{ url_for('manage_competition', comp_id=comp.id) }}" class="jf-btn jf-btn-outline">
+      <i class="bi bi-check-circle"></i> Kész, vissza
+    </a>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+function showTab(tab) {
+  document.getElementById('panelRiders').style.display = tab === 'riders' ? '' : 'none';
+  document.getElementById('panelCats').style.display = tab === 'cats' ? '' : 'none';
+  document.getElementById('tabRiders').className = tab === 'riders' ? 'jf-btn' : 'jf-btn jf-btn-ghost';
+  document.getElementById('tabCats').className = tab === 'cats' ? 'jf-btn' : 'jf-btn jf-btn-ghost';
+}
+
+async function addEventJudge(eventId) {
+  const judgeId = document.getElementById('eventJudgeSelect').value;
+  const position = document.getElementById('eventJudgePosSelect').value;
+  if (!judgeId) return alert('Válassz bírót!');
+  const res = await fetch(`/event/${eventId}/add-event-judge`, {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({judge_id: parseInt(judgeId), position})
+  });
+  if (res.ok) location.reload();
+}
+
+async function removeEventJudge(judgeId, eventId) {
+  if (!confirm('Törlöd ezt a bírót erről a versenyszámról?')) return;
+  const res = await fetch(`/event/${eventId}/remove-event-judge/${judgeId}`, {method: 'POST'});
+  if (res.ok) location.reload();
+}
+
+function showRiderEdit(id) {
+  document.getElementById('rider-display-' + id).style.display = 'none';
+  document.getElementById('rider-edit-' + id).style.display = 'block';
+}
+function cancelRiderEdit(id) {
+  document.getElementById('rider-display-' + id).style.display = '';
+  document.getElementById('rider-edit-' + id).style.display = 'none';
+}
+async function saveRider(id, eventId) {
+  const name = document.getElementById('re-name-' + id).value.trim();
+  if (!name) return alert('Név kötelező!');
+  const res = await fetch(`/event/${eventId}/edit-rider/${id}`, {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({name, horse: document.getElementById('re-horse-' + id).value.trim(),
+      category: document.getElementById('re-cat-' + id).value, licence: document.getElementById('re-lic-' + id).value,
+      email: document.getElementById('re-email-' + id).value.trim(), phone: document.getElementById('re-phone-' + id).value.trim(),
+      rider_code: document.getElementById('re-code-' + id).value.trim()})
+  });
+  if (res.ok) location.reload();
+}
+async function deleteRider(id, eventId) {
+  if (!confirm('Biztosan törlöd?')) return;
+  const res = await fetch(`/event/${eventId}/delete-rider/${id}`, {method: 'POST'});
+  if (res.ok) location.reload();
+}
+async function addRider(eventId) {
+  const name = document.getElementById('riderNameInput').value.trim();
+  if (!name) return alert('Versenyző neve kötelező!');
+  const res = await fetch(`/event/${eventId}/add-rider`, {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({name, horse: document.getElementById('riderHorseInput').value.trim(),
+      category: document.getElementById('riderCategoryInput').value, licence: document.getElementById('riderLicenceInput').value,
+      email: document.getElementById('riderEmailInput').value.trim(), phone: document.getElementById('riderPhoneInput').value.trim(),
+      rider_code: document.getElementById('riderCodeInput').value.trim()})
+  });
+  if (res.ok) location.reload();
+}
+async function addCategory(eventId) {
+  const name = document.getElementById('newCategoryInput').value.trim();
+  if (!name) return;
+  const res = await fetch(`/event/${eventId}/add-category`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name})});
+  if (res.ok) location.reload();
+}
+async function addLicence(eventId) {
+  const name = document.getElementById('newLicenceInput').value.trim();
+  if (!name) return;
+  const res = await fetch(`/event/${eventId}/add-licence`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name})});
+  if (res.ok) location.reload();
+}
+</script>
+{% endblock %}

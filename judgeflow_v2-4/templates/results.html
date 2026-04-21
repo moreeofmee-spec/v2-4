@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block title %}{% if session.get('lang','hu')=='hu' %}Eredmények{% else %}Results{% endif %} – {{ event.name }}{% endblock %}
+{% block content %}
+<div class="jf-page-header">
+  <div class="container">
+    <div class="jf-breadcrumb"><a href="{{ url_for('index') }}">JudgeFlow</a> / {{ comp.name }}</div>
+    <h1>🏆 {{ event.name }}</h1>
+    <p style="color:var(--text2);font-size:14px;margin-top:4px">{{ comp.name }}{% if comp.date %} · {{ comp.date }}{% endif %}</p>
+  </div>
+</div>
+
+<div class="container" style="max-width:1100px">
+  <!-- Filters -->
+  <div class="jf-filter-bar jf-fade">
+    <div class="jf-filter-group">
+      <span class="jf-filter-label">{% if session.get('lang','hu')=='hu' %}Kategória{% else %}Category{% endif %}</span>
+      <select class="jf-input jf-select" id="filterCat" onchange="applyFilters()">
+        <option value="">{% if session.get('lang','hu')=='hu' %}Összes{% else %}All{% endif %}</option>
+        {% for cat in categories %}<option value="{{ cat.name }}" {% if filter_cat==cat.name %}selected{% endif %}>{{ cat.name }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="jf-filter-group">
+      <span class="jf-filter-label">{% if session.get('lang','hu')=='hu' %}Licence{% else %}Licence{% endif %}</span>
+      <select class="jf-input jf-select" id="filterLic" onchange="applyFilters()">
+        <option value="">{% if session.get('lang','hu')=='hu' %}Összes{% else %}All{% endif %}</option>
+        {% for lic in licences %}<option value="{{ lic.name }}" {% if filter_lic==lic.name %}selected{% endif %}>{{ lic.name }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="jf-filter-group">
+      <span class="jf-filter-label">{% if session.get('lang','hu')=='hu' %}Bíró{% else %}Judge{% endif %}</span>
+      <select class="jf-input jf-select" id="filterJudge" onchange="applyFilters()">
+        <option value="">{% if session.get('lang','hu')=='hu' %}Összes{% else %}All{% endif %}</option>
+        {% for j in judges %}<option value="{{ j.id }}" {% if filter_jid==j.id|string %}selected{% endif %}>{{ j.name }}</option>{% endfor %}
+      </select>
+    </div>
+    <button class="jf-btn jf-btn-ghost jf-btn-sm" onclick="clearFilters()">
+      <i class="bi bi-x-circle"></i> {% if session.get('lang','hu')=='hu' %}Törlés{% else %}Clear{% endif %}
+    </button>
+  </div>
+
+  <!-- Table -->
+  {% if results %}
+    <div class="jf-card jf-fade jf-fade-d1">
+      <div class="table-responsive">
+        <table class="jf-table">
+          <thead><tr>
+            <th>{% if session.get('lang','hu')=='hu' %}Hely{% else %}Rank{% endif %}</th>
+            <th>#</th>
+            <th>{% if session.get('lang','hu')=='hu' %}Versenyző{% else %}Rider{% endif %}</th>
+            <th>{% if session.get('lang','hu')=='hu' %}Ló{% else %}Horse{% endif %}</th>
+            <th>{% if session.get('lang','hu')=='hu' %}Kategória{% else %}Category{% endif %}</th>
+            <th>{% if session.get('lang','hu')=='hu' %}Licence{% else %}Licence{% endif %}</th>
+            <th>{% if session.get('lang','hu')=='hu' %}Bírói pontok{% else %}Judge Scores{% endif %}</th>
+            <th>{% if session.get('lang','hu')=='hu' %}Átlag %{% else %}Avg %{% endif %}</th>
+          </tr></thead>
+          <tbody>
+          {% for r in results %}
+          <tr>
+            <td><span class="jf-rank {% if r.rank==1 %}jf-rank-1{% elif r.rank==2 %}jf-rank-2{% elif r.rank==3 %}jf-rank-3{% endif %}">
+              {% if r.rank==1 %}🥇{% elif r.rank==2 %}🥈{% elif r.rank==3 %}🥉{% else %}{{ r.rank }}{% endif %}
+            </span></td>
+            <td><span class="jf-badge">{{ r.rider.start_number }}</span></td>
+            <td><strong>{{ r.rider.name }}</strong></td>
+            <td>{{ r.rider.horse }}</td>
+            <td><span class="jf-badge jf-badge-grey">{{ r.rider.category }}</span></td>
+            <td><span class="jf-badge">{{ r.rider.licence }}</span></td>
+            <td>
+              <div style="font-size:12px;color:var(--text2)">
+                {% for js in r.judge_scores %}
+                  <span title="{{ js.judge }}">{% if js.position %}{{ js.position }}{% else %}B{% endif %}: <strong>{{ js.percent }}%</strong></span>{% if not loop.last %} · {% endif %}
+                {% endfor %}
+              </div>
+            </td>
+            <td>
+              <div class="jf-score-bar">
+                <div class="jf-bar-track"><div class="jf-bar-fill" style="width:{{ r.avg_percent }}%"></div></div>
+                <span class="jf-score-pct" style="color:var(--accent)">{{ r.avg_percent }}%</span>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {% else %}
+    <div class="jf-card text-center jf-fade" style="padding:48px">
+      <div style="font-size:48px;margin-bottom:16px">📊</div>
+      <p style="color:var(--text2)">{% if session.get('lang','hu')=='hu' %}Még nincsenek eredmények.{% else %}No results yet.{% endif %}</p>
+    </div>
+  {% endif %}
+
+  <!-- Export -->
+  <div class="jf-card jf-fade jf-fade-d2 mt-4">
+    <h3 class="jf-section-title" style="font-size:1rem"><i class="bi bi-download me-2" style="color:var(--accent)"></i>Export</h3>
+    <div class="d-flex align-items-center gap-3 flex-wrap mt-2">
+      <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer">
+        <input type="checkbox" id="exportDetailed" style="accent-color:var(--accent)">
+        {% if session.get('lang','hu')=='hu' %}Részletes (bírói bontás){% else %}Detailed (per judge){% endif %}
+      </label>
+      <button class="jf-btn jf-btn-sm" id="exportExcel" data-event="{{ event.id }}">
+        <i class="bi bi-file-earmark-spreadsheet"></i> Excel
+      </button>
+      <button class="jf-btn jf-btn-sm jf-btn-outline" id="exportPdf" data-event="{{ event.id }}">
+        <i class="bi bi-file-earmark-pdf"></i> PDF
+      </button>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+function applyFilters() {
+  const cat = document.getElementById('filterCat').value;
+  const lic = document.getElementById('filterLic').value;
+  const jid = document.getElementById('filterJudge').value;
+  const p = new URLSearchParams();
+  if (cat) p.set('category', cat);
+  if (lic) p.set('licence', lic);
+  if (jid) p.set('judge_id', jid);
+  window.location = window.location.pathname + (p.toString() ? '?' + p : '');
+}
+function clearFilters() { window.location = window.location.pathname; }
+
+document.getElementById('exportExcel')?.addEventListener('click', function() {
+  const eventId = this.dataset.event;
+  const params = new URLSearchParams(window.location.search);
+  params.set('detailed', document.getElementById('exportDetailed').checked ? '1' : '0');
+  window.location = `/event/${eventId}/export/excel?${params}`;
+});
+document.getElementById('exportPdf')?.addEventListener('click', function() {
+  const eventId = this.dataset.event;
+  const params = new URLSearchParams(window.location.search);
+  params.set('detailed', document.getElementById('exportDetailed').checked ? '1' : '0');
+  window.location = `/event/${eventId}/export/pdf?${params}`;
+});
+</script>
+{% endblock %}

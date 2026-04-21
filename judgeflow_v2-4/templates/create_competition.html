@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Új verseny – JudgeFlow{% endblock %}
+{% block content %}
+<div class="jf-page-header">
+  <div class="container">
+    <div class="jf-breadcrumb"><a href="{{ url_for('index') }}">JudgeFlow</a> / <a href="{{ url_for('organizer_home') }}">Rendező</a></div>
+    <h1>{% if session.get('lang','hu')=='hu' %}Új verseny létrehozása{% else %}Create New Competition{% endif %}</h1>
+  </div>
+</div>
+<div class="container" style="max-width:620px">
+  <div class="jf-card jf-fade">
+    <form method="POST">
+      <h4 class="jf-section-title" style="font-size:1rem;margin-bottom:16px">🏇 Verseny adatai</h4>
+      <div class="jf-form-group">
+        <label class="jf-label">Verseny neve *</label>
+        <input type="text" name="name" class="jf-input" required autofocus placeholder="pl. Tavaszi Kupa 2025">
+      </div>
+      <div class="jf-form-group">
+        <label class="jf-label">Dátum</label>
+        <input type="date" name="date" class="jf-input">
+      </div>
+      <div class="jf-card mt-2 mb-3" style="background:var(--accent-light);border-color:var(--accent)">
+        <div style="font-size:13px;color:var(--text2)">
+          <i class="bi bi-info-circle me-2" style="color:var(--accent)"></i>
+          {% if session.get('lang','hu')=='hu' %}
+            Verseny létrehozása után automatikusan kapsz egy <strong>egyedi rendező kódot</strong> és egy <strong>verseny azonosítót</strong>. Ezeket emailben is elküldjük.
+          {% else %}
+            After creating, you'll automatically receive a unique <strong>organizer code</strong> and <strong>competition ID</strong>. We'll also send them by email.
+          {% endif %}
+        </div>
+      </div>
+
+      <hr style="border-color:var(--border);margin:24px 0">
+      <h4 class="jf-section-title" style="font-size:1rem;margin-bottom:16px">
+        👤 Rendező elérhetősége
+        <span style="font-size:12px;font-weight:400;color:var(--text2)">(sürgős esetén elérhető személy)</span>
+      </h4>
+      <div class="jf-form-group">
+        <label class="jf-label">Rendező neve *</label>
+        <input type="text" name="organizer_name" class="jf-input" required>
+      </div>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <div class="jf-form-group">
+            <label class="jf-label">Email *</label>
+            <input type="email" name="organizer_email" class="jf-input" required>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="jf-form-group">
+            <label class="jf-label">Telefon *</label>
+            <input type="tel" name="organizer_phone" class="jf-input" required placeholder="+36...">
+          </div>
+        </div>
+      </div>
+      <div class="d-flex gap-3 mt-4">
+        <button type="submit" class="jf-btn">
+          <i class="bi bi-plus-circle"></i> Verseny létrehozása
+        </button>
+        <a href="{{ url_for('organizer_home') }}" class="jf-btn jf-btn-ghost">Mégsem</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

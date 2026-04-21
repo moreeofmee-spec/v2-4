@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% block title %}{{ rider.name }} – Pontozás{% endblock %}
+{% block nav_breadcrumb %}
+  <a href="{{ url_for('judge_panel', event_id=event.id) }}" style="color:var(--text2);text-decoration:none">{{ event.name }}</a>
+  <i class="bi bi-chevron-right" style="font-size:10px"></i>
+  <span style="color:var(--accent)">{{ rider.name }}</span>
+{% endblock %}
+{% block nav_logout %}
+  <a href="{{ url_for('logout_judge', event_id=event.id) }}" class="jf-btn jf-btn-ghost jf-btn-sm">
+    <i class="bi bi-box-arrow-right"></i> Kilépés
+  </a>
+{% endblock %}
+{% block content %}
+<div class="jf-page-header">
+  <div class="container">
+    <div class="jf-breadcrumb">
+      <a href="{{ url_for('index') }}">JudgeFlow</a> /
+      <a href="{{ url_for('judge_panel', event_id=event.id) }}">← {% if session.get('lang','hu')=='hu' %}Indulók{% else %}Riders{% endif %}</a>
+    </div>
+    <h1>{{ rider.name }}</h1>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:6px">
+      🐎 <strong>{{ rider.horse }}</strong>
+      {% if rider.category %}<span class="jf-badge jf-badge-grey">{{ rider.category }}</span>{% endif %}
+      {% if rider.licence %}<span class="jf-badge">{{ rider.licence }}</span>{% endif %}
+      <span style="color:var(--text2);font-size:13px">· #{{ rider.start_number }}</span>
+      <span style="color:var(--text2);font-size:13px">· {{ judge.name }}{% if judge.position %} ({{ judge.position }}){% endif %}</span>
+    </div>
+  </div>
+</div>
+
+<div class="container" style="max-width:800px">
+  <!-- Live score -->
+  <div class="jf-card jf-fade mb-4" style="background:var(--accent-light);border-color:var(--accent)">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+      <div>
+        <div style="font-family:'Syne',sans-serif;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.8px;color:var(--accent);margin-bottom:4px">
+          {% if session.get('lang','hu')=='hu' %}Élő pontszám{% else %}Live Score{% endif %}
+        </div>
+        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:2rem">
+          <span id="liveScore">0.00</span> <span style="font-size:1rem;color:var(--text2)">/ 30</span>
+        </div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:2.5rem;color:var(--accent)">
+          <span id="livePercent">0.00%</span>
+        </div>
+      </div>
+    </div>
+    <div class="jf-bar-track mt-3" style="height:8px">
+      <div class="jf-bar-fill" id="liveBar" style="width:0%"></div>
+    </div>
+  </div>
+
+  <form method="POST" id="scoreForm">
+    <div class="jf-card jf-fade jf-fade-d1 mb-4">
+      <h3 class="jf-section-title" style="font-size:1.1rem;margin-bottom:16px">
+        {% if session.get('lang','hu')=='hu' %}30 Feladat{% else %}30 Tasks{% endif %}
+        <span style="font-size:13px;font-weight:400;color:var(--text2)">(max 10 / feladat)</span>
+      </h3>
+      <div class="jf-task-grid">
+        {% for i in range(1, 31) %}
+        <div class="jf-task-cell">
+          <div class="jf-task-label">T{{ i }}</div>
+          <input type="number" name="task_{{ i }}" id="task_{{ i }}" class="jf-task-input"
+                 min="0" max="10" step="0.5"
+                 value="{{ existing_tasks[i-1] if existing_tasks and i <= existing_tasks|length and existing_tasks[i-1] != '' else '' }}"
+                 placeholder="–"
+                 data-task-index="{{ i }}">
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="jf-card jf-fade jf-fade-d2 mb-4">
+      <h3 class="jf-section-title" style="font-size:1.1rem;margin-bottom:16px">
+        {% if session.get('lang','hu')=='hu' %}Korrekciók{% else %}Corrections{% endif %}
+      </h3>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="jf-label">{% if session.get('lang','hu')=='hu' %}Hibapontok (levonás){% else %}Error points{% endif %}</label>
+          <input type="number" name="error_points" id="error_points" class="jf-input"
+                 min="0" step="0.5" value="{{ score.error_points if score else '' }}" placeholder="0">
+        </div>
+        <div class="col-md-6">
+          <label class="jf-label">{% if session.get('lang','hu')=='hu' %}Szorzó{% else %}Multiplier{% endif %}</label>
+          <input type="number" name="multiplier" id="multiplier" class="jf-input"
+                 min="0" step="0.1" value="{{ score.multiplier if score else '' }}" placeholder="1.0">
+        </div>
+      </div>
+    </div>
+
+    <div class="d-flex gap-3">
+      <button type="submit" class="jf-btn">
+        <i class="bi bi-floppy"></i>
+        {% if session.get('lang','hu')=='hu' %}Mentés{% else %}Save{% endif %}
+      </button>
+      <a href="{{ url_for('judge_panel', event_id=event.id) }}" class="jf-btn jf-btn-ghost">
+        {% if session.get('lang','hu')=='hu' %}Vissza{% else %}Back{% endif %}
+      </a>
+    </div>
+  </form>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+const taskInputs = Array.from(document.querySelectorAll('.jf-task-input'));
+const liveScore = document.getElementById('liveScore');
+const livePercent = document.getElementById('livePercent');
+const liveBar = document.getElementById('liveBar');
+const errorInput = document.getElementById('error_points');
+const multiplierInput = document.getElementById('multiplier');
+
+function recalc() {
+  let sum = 0;
+  taskInputs.forEach(inp => {
+    const v = parseFloat(inp.value) || 0;
+    sum += Math.min(Math.max(v, 0), 10);
+  });
+  const err = parseFloat(errorInput.value) || 0;
+  const mul = parseFloat(multiplierInput.value) || 1;
+  const result = Math.min(Math.max(0, (sum - err) * mul), 30);
+  const pct = Math.min((result / 30) * 100, 100).toFixed(2);
+  liveScore.textContent = result.toFixed(2);
+  livePercent.textContent = pct + '%';
+  liveBar.style.width = pct + '%';
+}
+
+// Enter key moves to next task
+taskInputs.forEach((inp, idx) => {
+  inp.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      // next task input
+      const next = taskInputs[idx + 1];
+      if (next) next.focus();
+      else errorInput.focus();
+    }
+  });
+  inp.addEventListener('input', recalc);
+});
+errorInput.addEventListener('input', recalc);
+multiplierInput.addEventListener('input', recalc);
+
+// Enter on error/multiplier submits
+errorInput.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') { e.preventDefault(); multiplierInput.focus(); }
+});
+multiplierInput.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') { e.preventDefault(); document.getElementById('scoreForm').submit(); }
+});
+
+// Enter on any form input triggers submit if it's a button context
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && document.activeElement.tagName === 'INPUT' &&
+      document.activeElement.type === 'password') {
+    e.preventDefault();
+    document.activeElement.closest('form').submit();
+  }
+});
+
+recalc();
+</script>
+{% endblock %}

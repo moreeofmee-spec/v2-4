@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Rendező belépés – JudgeFlow{% endblock %}
+{% block content %}
+<div class="jf-login-wrap">
+  <div class="jf-login-card jf-fade">
+    <div class="jf-card">
+      <div class="text-center mb-4">
+        <div style="font-size:40px;margin-bottom:12px">🗂️</div>
+        <h2 class="jf-section-title">{% if session.get('lang','hu')=='hu' %}Rendező belépés{% else %}Organizer Login{% endif %}</h2>
+        <p style="color:var(--text2);font-size:14px">{% if session.get('lang','hu')=='hu' %}Add meg a rendező kódodat (4 szám + 2 betű){% else %}Enter your organizer code (4 digits + 2 letters){% endif %}</p>
+      </div>
+      <form method="POST">
+        <div class="jf-form-group">
+          <label class="jf-label">{% if session.get('lang','hu')=='hu' %}Rendező kód{% else %}Organizer Code{% endif %}</label>
+          <input type="text" name="organizer_code" class="jf-input" required autofocus
+                 style="letter-spacing:4px;text-align:center;font-size:20px;font-family:'Syne',sans-serif;font-weight:700;text-transform:uppercase"
+                 placeholder="1234AB" maxlength="6">
+          <div style="font-size:12px;color:var(--text2);margin-top:5px">
+            <i class="bi bi-info-circle"></i>
+            {% if session.get('lang','hu')=='hu' %}Ezt a kódot verseny létrehozásakor kaptad{% else %}You received this code when creating the competition{% endif %}
+          </div>
+        </div>
+        <button type="submit" class="jf-btn w-100">
+          <i class="bi bi-box-arrow-in-right"></i>
+          {% if session.get('lang','hu')=='hu' %}Belépés{% else %}Login{% endif %}
+        </button>
+      </form>
+      <div class="text-center mt-3 d-flex justify-content-between">
+        <a href="{{ url_for('organizer_home') }}" style="font-size:13px;color:var(--text2);text-decoration:none">← {% if session.get('lang','hu')=='hu' %}Vissza{% else %}Back{% endif %}</a>
+        <a href="{{ url_for('organizer_forgot') }}" style="font-size:13px;color:var(--accent);text-decoration:none">
+          🔑 {% if session.get('lang','hu')=='hu' %}Elfelejtett kód{% else %}Forgot code{% endif %}
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

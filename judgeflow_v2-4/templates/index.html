@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}JudgeFlow{% endblock %}
+{% block content %}
+<div class="jf-hero jf-fade">
+  <div class="jf-hero-badge">🏇 JudgeFlow</div>
+  <h1>{% if session.get('lang','hu')=='hu' %}Lovasverseny<br><span>pontozó rendszer</span>{% else %}Equestrian<br><span>scoring platform</span>{% endif %}</h1>
+  <p>{% if session.get('lang','hu')=='hu' %}Ki vagy?{% else %}Who are you?{% endif %}</p>
+</div>
+<div class="container" style="max-width:900px;margin-top:-20px">
+  <div class="row g-4">
+    <div class="col-md-4 jf-fade jf-fade-d1">
+      <a href="{{ url_for('organizer_home') }}" class="jf-role-card">
+        <div class="jf-role-icon">🗂️</div>
+        <h3>{% if session.get('lang','hu')=='hu' %}Versenyrendező{% else %}Organizer{% endif %}</h3>
+        <p>{% if session.get('lang','hu')=='hu' %}Verseny létrehozása, szerkesztése{% else %}Create or edit competitions{% endif %}</p>
+        <span class="jf-role-arrow">→</span>
+      </a>
+    </div>
+    <div class="col-md-4 jf-fade jf-fade-d2">
+      <a href="{{ url_for('judge_home') }}" class="jf-role-card">
+        <div class="jf-role-icon">⚖️</div>
+        <h3>{% if session.get('lang','hu')=='hu' %}Bíró{% else %}Judge{% endif %}</h3>
+        <p>{% if session.get('lang','hu')=='hu' %}Pontozás megkezdése{% else %}Start scoring{% endif %}</p>
+        <span class="jf-role-arrow">→</span>
+      </a>
+    </div>
+    <div class="col-md-4 jf-fade jf-fade-d3">
+      <a href="{{ url_for('rider_home') }}" class="jf-role-card">
+        <div class="jf-role-icon">🐎</div>
+        <h3>{% if session.get('lang','hu')=='hu' %}Induló / Versenyző{% else %}Rider{% endif %}</h3>
+        <p>{% if session.get('lang','hu')=='hu' %}Eredmények megtekintése{% else %}View results{% endif %}</p>
+        <span class="jf-role-arrow">→</span>
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

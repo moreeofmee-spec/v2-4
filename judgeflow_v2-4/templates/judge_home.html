@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Bíró belépés – JudgeFlow{% endblock %}
+{% block content %}
+<div class="jf-login-wrap">
+  <div class="jf-login-card jf-fade">
+    <div class="jf-card">
+      <div class="text-center mb-4">
+        <div style="font-size:40px;margin-bottom:12px">⚖️</div>
+        <h2 class="jf-section-title">{% if session.get('lang','hu')=='hu' %}Bíró belépés{% else %}Judge Login{% endif %}</h2>
+        <p style="color:var(--text2);font-size:14px">{% if session.get('lang','hu')=='hu' %}Add meg a verseny azonosítóját{% else %}Enter the competition ID{% endif %}</p>
+      </div>
+      <form method="POST" action="{{ url_for('judge_login_home') }}">
+        <div class="jf-form-group">
+          <label class="jf-label">{% if session.get('lang','hu')=='hu' %}Verseny azonosító (5 jegy){% else %}Competition ID (5 digits){% endif %}</label>
+          <input type="text" name="public_id" class="jf-input" required autofocus
+                 style="font-size:24px;text-align:center;font-family:'Syne',sans-serif;font-weight:700"
+                 placeholder="12345" maxlength="5">
+        </div>
+        <button type="submit" class="jf-btn w-100">
+          <i class="bi bi-search"></i>
+          {% if session.get('lang','hu')=='hu' %}Verseny keresése{% else %}Find Competition{% endif %}
+        </button>
+      </form>
+      <div class="text-center mt-3">
+        <a href="{{ url_for('index') }}" style="font-size:13px;color:var(--text2);text-decoration:none">← {% if session.get('lang','hu')=='hu' %}Vissza{% else %}Back{% endif %}</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
